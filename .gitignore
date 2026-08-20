@@ -1,0 +1,58 @@
+# Ignore all hidden files and directories
+.*
+
+# Explicitly track .gitignore
+!.gitignore
+
+# Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Backup folders, files, and temporary artifacts
+backup/
+backups/
+*~
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.tmp
+*.sav
+*.save
+*#
+.#*
+
+# Python byte-compiled / cache / runtime
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+
+# Logs and databases
+*.log
+*.sqlite
+
+# OS and Editor artifacts
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
