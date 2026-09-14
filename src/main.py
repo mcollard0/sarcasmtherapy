@@ -1,8 +1,53 @@
 import os;
 import sys;
 import re;
+import urllib.request;
 from llm import SarcasticTherapist;
 from audio import AudioPipeline;
+
+VOICE_URLS = {
+    "en_US-ryan-medium": {
+        "onnx": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medium/en_US-ryan-medium.onnx",
+        "json": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medium/en_US-ryan-medium.onnx.json"
+    },
+    "en_US-lessac-medium": {
+        "onnx": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+        "json": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+    }
+};
+
+def ensure_voice_downloaded( voice_name: str, models_dir: str ) -> str:
+    # Resolve aliases
+    alias_map = {
+        "ryan": "en_US-ryan-medium",
+        "lessac": "en_US-lessac-medium",
+        "voice": "en_US-lessac-medium"
+    };
+    canonical = alias_map.get( voice_name.replace( ".onnx", "" ), voice_name.replace( ".onnx", "" ) );
+    
+    os.makedirs( models_dir, exist_ok=True );
+    onnx_path = os.path.join( models_dir, f"{canonical}.onnx" );
+    json_path = os.path.join( models_dir, f"{canonical}.onnx.json" );
+    
+    if ( os.path.exists( onnx_path ) and os.path.exists( json_path ) ):
+        return onnx_path;
+        
+    if ( canonical not in VOICE_URLS ):
+        # Check if user provided an already existing path
+        if ( os.path.exists( onnx_path ) ):
+            return onnx_path;
+        print( f"Error: Unknown voice '{voice_name}'. Available automatic downloads: {list( VOICE_URLS.keys() )}" );
+        sys.exit( 1 );
+        
+    urls = VOICE_URLS[ canonical ];
+    print( f"Voice '{canonical}' not found locally. Downloading on first use..." );
+    for ext, url in [ ( ".onnx", urls[ "onnx" ] ), ( ".onnx.json", urls[ "json" ] ) ]:
+        target = os.path.join( models_dir, f"{canonical}{ext}" );
+        if ( not os.path.exists( target ) ):
+            print( f"  Downloading {os.path.basename( target )}..." );
+            urllib.request.urlretrieve( url, target );
+    print( "Download complete!" );
+    return onnx_path;
 
 def main():
     debug_mode = "--debug" in sys.argv;
@@ -11,26 +56,15 @@ def main():
     else:
         print( "Initializing SarcasmTherapy Voice Bot in DEBUG mode..." );
     
-    # Path to the Piper model (defaults to ryan if present, falls back to voice.onnx)
-    ryan_path = os.path.join( os.path.dirname( __file__ ), "..", "models", "en_US-ryan-medium.onnx" );
-    default_path = os.path.join( os.path.dirname( __file__ ), "..", "models", "voice.onnx" );
+    models_dir = os.path.join( os.path.dirname( __file__ ), "..", "models" );
+    selected_voice = "en_US-ryan-medium";
     
     # Check if a custom --voice argument was supplied
-    model_path = ryan_path if os.path.exists( ryan_path ) else default_path;
     for idx, arg in enumerate( sys.argv ):
         if ( arg == "--voice" and idx + 1 < len( sys.argv ) ):
-            custom_name = sys.argv[ idx + 1 ];
-            candidate = os.path.join( os.path.dirname( __file__ ), "..", "models", custom_name );
-            if ( not candidate.endswith( ".onnx" ) ):
-                candidate += ".onnx";
-            if ( os.path.exists( candidate ) ):
-                model_path = candidate;
-            else:
-                print( f"Warning: Voice '{custom_name}' not found at {candidate}. Using default." );
+            selected_voice = sys.argv[ idx + 1 ];
     
-    if ( not os.path.exists( model_path ) ):
-        print( f"Error: Piper TTS model not found at {model_path}." );
-        sys.exit( 1 );
+    model_path = ensure_voice_downloaded( selected_voice, models_dir );
         
     print( f"Using voice: {os.path.basename( model_path )}" );
     audio_pipeline = AudioPipeline( model_path, debug=debug_mode );

@@ -46,9 +46,9 @@ var/
 wheels/
 *.egg-info/
 
-# Logs and databases
-*.log
-*.sqlite
+# Models and voices
+models/*
+!models/.gitkeep
 
 # OS and Editor artifacts
 .DS_Store
