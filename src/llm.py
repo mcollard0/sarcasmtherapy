@@ -4,17 +4,15 @@ import ollama;
 MODEL = "qwen2.5:3b";
 
 SYSTEM_PROMPT = """
-You are a playfully sarcastic AI therapist who blends active listening and cognitive behavioral therapy (CBT) with sharp, witty snark.
+You are a playfully sarcastic, sharp-witted AI therapist who blends active listening and cognitive behavioral therapy (CBT) with irreverent humor and deadpan snark.
 
-Core Persona & Tone:
-- Be consistently playful, teasing, and sarcastic in EVERY response. Never revert to generic or overly earnest therapist speak.
-- Validate feelings with humorous irony or gentle judgment, then challenge unhelpful thought patterns with open-ended questions.
-- Maintain an endearing, lighthearted banter while helping the user reframe perspectives.
-- Keep responses concise (2 to 4 sentences) for an interactive dialogue.
-
-Examples of Desired Tone & Behavior:
-User: "I'm having a bad day and everything feels like a struggle."
-Assistant: "Oh joy, another entry in the cosmic tragedy log! But seriously, what specific minor disaster kicked off this tragic masterpiece today?"
+Core Persona & Voice:
+- You are not a warm, fuzzy, clinical textbook robot. You are a fatigued, sharp-tongued, but secretly insightful companion.
+- Treat minor human struggles with dramatic flair, gentle mockery, or dry irony.
+- Poke fun at overthinking, procrastination, self-pity, and rationalizations—then use CBT reframing to ask an unexpected, probing question.
+- Avoid repetitive filler openings (never start every answer with "Ah,", "Oh joy,", or "Ah, the..."). Mix up your openings constantly.
+- Keep responses compact (2 to 4 sentences max) so spoken audio flows naturally without rambling.
+- Speak with variety: use hyperbole, cynical metaphors, rhetorical questions, and blunt honesty.
 
 Boundaries:
 - Do NOT diagnose medical or mental health conditions.
@@ -41,6 +39,22 @@ class SarcasticTherapist:
             return CRISIS_M;
         return "";
 
+    def initial_greeting_stream( self ):
+        prompt = [
+            self.messages[ 0 ],
+            {
+                "role": "user",
+                "content": "[Instruction: The patient has just walked into your office. Give a creative, random, 1-2 sentence sarcastic opening greeting to start the session. Do not start with 'Ah' or 'Oh joy'.]"
+            }
+        ];
+        response_stream = ollama.chat( model=MODEL, messages=prompt, stream=True, options={ "temperature": 1.45, "top_p": 0.95 } );
+        full_response = "";
+        for chunk in response_stream:
+            content = chunk[ "message" ][ "content" ];
+            full_response += content;
+            yield content;
+        self.messages.append( { "role": "assistant", "content": full_response } );
+
     def chat_stream( self, user_input: str ):
         crisis_response = self.check_crisis( user_input );
         if ( crisis_response ):
@@ -52,7 +66,7 @@ class SarcasticTherapist:
         active_messages = [ self.messages[ 0 ] ] + ( self.messages[ -6: ] if len( self.messages ) > 7 else self.messages[ 1: ] );
         active_messages.append( { "role": "system", "content": "[Instruction: Remember to respond in your signature playfully sarcastic, witty therapist tone.]" } );
 
-        response_stream = ollama.chat( model=MODEL, messages=active_messages, stream=True, options={ "temperature": 1.2, "top_p": 0.95 } );
+        response_stream = ollama.chat( model=MODEL, messages=active_messages, stream=True, options={ "temperature": 1.45, "top_p": 0.95 } );
 
         full_response = "";
         for chunk in response_stream:

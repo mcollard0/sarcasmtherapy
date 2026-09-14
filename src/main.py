@@ -72,13 +72,10 @@ def main():
     
     print( "Therapy mode on. Speak into the microphone. (Say 'stop', 'exit', or press Ctrl+C to quit)" );
     
-    # 1. Initial greeting
-    initial_greeting = "Ah, you've arrived. The doctor is in. Or at least, the highly sarcastic simulation of one is. What's on your mind?";
-    print( f"\n: Therapy: {initial_greeting}\n" );
-    
-    # Synthesize the initial greeting
-    # We pass it as a list to match the generator structure expected by speak()
-    audio_pipeline.speak( [ initial_greeting ] );
+    # 1. Dynamically generated initial greeting from Qwen
+    print( "\n: Therapy: ", end="", flush=True );
+    greeting_stream = therapist.initial_greeting_stream();
+    audio_pipeline.speak( greeting_stream );
     
     try:
         while True:
